@@ -50,6 +50,7 @@ formerDir=`pwd`
 #Set the config file
 configFile="$HOME/.${__base}.conf"
 
+
 #=== END Unique instance ============================================
 
 
@@ -77,27 +78,15 @@ echo; echo; echo;
 #(a.k.a set -x) to trace what gets executed
 set -o xtrace
 
-hostname=`hostname`
-
 sendAlert=0
 body=''
-IFS=$'\n'; for mount in `df`; do
-    if echo $mount | grep Filesystem ; then
-        continue
-    fi
 
-    CURRENT=$(echo $mount | awk '{ print $5}' | sed 's/%//g')
-    mountPoint=$(echo $mount | awk '{ print $6}' | sed 's/%//g')
-    filesystem=$(echo $mount | awk '{ print $1}' | sed 's/%//g')
-    THRESHOLD=90
+if ps -ef | grep apache | awk '{printf $1 "\n"}' | grep root | uniq; then
+	sendAlert=1
+	body="Apache running as root"
+fi
 
-    if [ "$CURRENT" -gt "$THRESHOLD" ] ; then
-        sendAlert=1
-        body=`echo -e "${body}
-Your $mountPoint ($filesystem) partition remaining free space on $hostname is used at $CURRENT% \\n"`
-	echo $body
-    fi
-done
+echo $body
 
 exit $sendAlert
 

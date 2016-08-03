@@ -50,6 +50,9 @@ formerDir=`pwd`
 #Set the config file
 configFile="$HOME/.${__base}.conf"
 
+
+
+
 #=== END Unique instance ============================================
 
 
@@ -63,10 +66,9 @@ chmod 600 $log
 
 
 #Check that the config file exists
-#if [[ ! -f "$configFile" ]] ; then
-#        echo "I need a file at $configFile with an email address to warn" 
-#        exit 1
-#fi
+if [[ ! -f "$configFile" ]] ; then
+        echo "I need a file at $configFile with absolute paths of files to test (as many as you like), on top of scanning ~/log/*.crontab.log" 
+fi
 
 export DISPLAY=:0
 
@@ -75,29 +77,29 @@ echo; echo; echo;
 ### BEGIN SCRIPT ###############################################################
 
 #(a.k.a set -x) to trace what gets executed
-set -o xtrace
-
-hostname=`hostname`
+#set -o xtrace
 
 sendAlert=0
 body=''
-IFS=$'\n'; for mount in `df`; do
-    if echo $mount | grep Filesystem ; then
-        continue
-    fi
 
-    CURRENT=$(echo $mount | awk '{ print $5}' | sed 's/%//g')
-    mountPoint=$(echo $mount | awk '{ print $6}' | sed 's/%//g')
-    filesystem=$(echo $mount | awk '{ print $1}' | sed 's/%//g')
-    THRESHOLD=90
+if [[ ! -f $configFile ]]; then
+	sendAlert=1
+	body="No pages to test for $__base"
+fi
 
-    if [ "$CURRENT" -gt "$THRESHOLD" ] ; then
-        sendAlert=1
-        body=`echo -e "${body}
-Your $mountPoint ($filesystem) partition remaining free space on $hostname is used at $CURRENT% \\n"`
-	echo $body
-    fi
+for file in `cat $configFile | sort | uniq ` ~/log/*.crontab.log ; do
+	bn=`basename $file`
+	if [ "$bn" == "dumuzid.crontab.log" ]; then
+		continue
+	fi
+
+	if grep -e 'warn\|error' $file; then
+		sendAlert=1
+		body="Found warning or error in $file on `hostname`"
+	fi
 done
+
+echo $body
 
 exit $sendAlert
 
