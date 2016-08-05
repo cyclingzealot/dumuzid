@@ -83,7 +83,7 @@ chmod 600 $log
 
 #Check that the config file exists
 if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with an email address to warn" 
+        echo "I need a file at $configFile with an email address to warn"
         exit 1
 fi
 
@@ -102,6 +102,10 @@ recipient=`cat $configFile`
 hostname=`hostname`
 scratchFile=/tmp/dumuzid.scratch
 echo > $scratchFile
+
+if [[ ! -f $__dir/dontRun.txt ]]; then
+    touch $__dir/dontRun.txt
+fi
 
 sendAlert=0
 echo > $scratchFile
@@ -131,7 +135,7 @@ if [ "$sendAlert" -eq "1" ] ; then
     cat $scratchFile
     if ~/bin/flagger.bash dumuzid 3600; then
         cat $scratchFile | mail -s "$subject" $recipient
-    else 
+    else
 	echo "Too early to send another notice"
     fi
 else
