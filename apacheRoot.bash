@@ -81,11 +81,11 @@ set -o xtrace
 sendAlert=0
 body=''
 
-rootNb=`ps -ef | grep apache | awk '{printf $1 "\n"}' | grep root | wc -l `
+rootNb=`ps -ef | grep apache | awk '{printf $1 "\n"}' | grep root | wc -l ` || true
 
 if [[ "$rootNb" -gt 1 ]]; then
 	sendAlert=1
-	body="Apache running as root"
+	body="$rootNb procs running apache as root"
 fi
 
 echo $body
