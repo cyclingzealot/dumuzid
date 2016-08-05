@@ -65,7 +65,7 @@ chmod 600 $log
 
 #Check that the config file exists
 #if [[ ! -f "$configFile" ]] ; then
-#        echo "I need a file at $configFile with an email address to warn" 
+#        echo "I need a file at $configFile with an email address to warn"
 #        exit 1
 #fi
 
@@ -81,7 +81,9 @@ set -o xtrace
 sendAlert=0
 body=''
 
-if ps -ef | grep apache | awk '{printf $1 "\n"}' | grep root | uniq; then
+rootNb=`ps -ef | grep apache | awk '{printf $1 "\n"}' | grep root | wc -l `
+
+if [[ "$rootNb" -gt 1 ]]; then
 	sendAlert=1
 	body="Apache running as root"
 fi
