@@ -67,7 +67,7 @@ chmod 600 $log
 
 #Check that the config file exists
 if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with urls to test (as many as you like)" 
+        echo "I need a file at $configFile with urls to test (as many as you like)"
 fi
 
 export DISPLAY=:0
@@ -87,9 +87,9 @@ if [[ ! -f $configFile ]]; then
 	body="No pages to test for $__base"
 fi
 
-for page in `cat $configFile | sort | uniq | sort -R | head -n 7`; do
+for page in `cat $configFile | sort | uniq | sort -R | head -n 3`; do
 	START=$(date +%s.%N)
-	TH=5
+	TH=10
 	if ! curl -I -fs --max-time $TH $page | head -n 1 ; then
 		END=$(date +%s.%N)
 		DIFF=$(echo "$END - $START" | bc)
