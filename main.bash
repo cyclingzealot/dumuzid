@@ -139,6 +139,7 @@ if [ "$sendAlert" -eq "1" ] ; then
 	echo "Too early to send another notice"
     fi
 else
+    ~/bin/flagger.bash dumuzid -1
     echo "No errors detected"
 fi
 
