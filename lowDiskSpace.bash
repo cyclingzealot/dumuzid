@@ -48,7 +48,7 @@ formerDir=`pwd`
 # http://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 
 #Set the config file
-configFile="$HOME/.${__base}.conf"
+configFile="$HOME/.${__base}.ignoreMountPoints.conf"
 
 #=== END Unique instance ============================================
 
@@ -63,10 +63,10 @@ chmod 600 $log
 
 
 #Check that the config file exists
-#if [[ ! -f "$configFile" ]] ; then
-#        echo "I need a file at $configFile with an email address to warn" 
-#        exit 1
-#fi
+if [[ ! -f "$configFile" ]] ; then
+        echo "I need a file at $configFile with a list of mountpoints to ignore" 
+        exit 1
+fi
 
 export DISPLAY=:0
 
@@ -90,6 +90,10 @@ IFS=$'\n'; for mount in `df`; do
     mountPoint=$(echo $mount | awk '{ print $6}' | sed 's/%//g')
     filesystem=$(echo $mount | awk '{ print $1}' | sed 's/%//g')
     THRESHOLD=90
+
+    if grep "^${mountPoint}$" $configFile ; then
+        continue
+    fi
 
     if [ "$CURRENT" -gt "$THRESHOLD" ] ; then
         sendAlert=1
