@@ -75,7 +75,7 @@ echo; echo; echo;
 ### BEGIN SCRIPT ###############################################################
 
 #(a.k.a set -x) to trace what gets executed
-set -o xtrace
+#set -o xtrace
 
 hostname=`hostname`
 
@@ -92,6 +92,7 @@ IFS=$'\n'; for mount in `df`; do
     THRESHOLD=90
 
     if grep "^${mountPoint}$" $configFile ; then
+        echo "Ignoring $mountPoint"
         continue
     fi
 
