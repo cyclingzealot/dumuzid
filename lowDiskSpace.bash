@@ -64,7 +64,7 @@ chmod 600 $log
 
 #Check that the config file exists
 #if [[ ! -f "$configFile" ]] ; then
-#        echo "I need a file at $configFile with an email address to warn" 
+#        echo "I need a file at $configFile with an email address to warn"
 #        exit 1
 #fi
 
@@ -90,6 +90,9 @@ IFS=$'\n'; for mount in `df`; do
     mountPoint=$(echo $mount | awk '{ print $6}' | sed 's/%//g')
     filesystem=$(echo $mount | awk '{ print $1}' | sed 's/%//g')
     THRESHOLD=90
+    if [[ $(date +%u) -gt 5 ]] || [[ $(date +%_H) -lt 10 ]] || [[ $(date +%_H) -gt 18 ]] ; then
+        THRESHOLD=95
+    fi
 
     if [ "$CURRENT" -gt "$THRESHOLD" ] ; then
         sendAlert=1
