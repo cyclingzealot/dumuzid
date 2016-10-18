@@ -64,7 +64,7 @@ chmod 600 $log
 
 #Check that the config file exists
 if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with a list of mountpoints to ignore" 
+        echo "I need a file at $configFile with a list of mountpoints to ignore"
         exit 1
 fi
 
@@ -82,7 +82,7 @@ hostname=`hostname`
 sendAlert=0
 body=''
 IFS=$'\n'; for mount in `df`; do
-    if echo $mount | grep Filesystem ; then
+    if echo $mount | grep 'Filesystem\|fichiers' ; then
         continue
     fi
 
@@ -96,11 +96,13 @@ IFS=$'\n'; for mount in `df`; do
         continue
     fi
 
-    if [ "$CURRENT" -gt "$THRESHOLD" ] ; then
+    if [[ "$CURRENT" -gt "$THRESHOLD" ]] ; then
         sendAlert=1
         body=`echo -e "${body}
 Your $mountPoint ($filesystem) partition remaining free space on $hostname is used at $CURRENT% \\n"`
 	echo $body
+    else
+        echo $mountPoint $CURRENT OK.
     fi
 done
 
