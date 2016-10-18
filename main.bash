@@ -133,14 +133,14 @@ if [ "$sendAlert" -eq "1" ] ; then
     echo  >> $scratchFile
     echo "Running on `hostname` by user `whoami`" >> $scratchFile
     cat $scratchFile
-    if [[ "recipient" != 'onscreen' ]]; then
+    if [[ "$recipient" != 'onscreen' ]]; then
         if ~/bin/flagger.bash dumuzid 3600; then
             cat $scratchFile | mail -s "$subject" $recipient
         else
     	    echo "Too early to send another notice"
         fi
-    elif [[ "$recipient" == 'onscreen' ]]; then
-        notify-send `cat $scratchFile`
+    elif [[ "$recipient" == 'onscreen' ]]; then
+        notify-send "`cat $scratchFile | grep -v '===' | grep -v 'Running on' `"
     else
         echo "Unrecognized recipient"
         exit 1
