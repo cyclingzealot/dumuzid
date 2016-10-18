@@ -74,7 +74,7 @@ trap "rm -f $pidfile" INT QUIT TERM ERR
 
 #Capture everything to log
 mkdir -p ~/log
-log=~/log/$__base-${ts}.log
+log=~/log/dumuzid-${ts}.log
 exec >  >(tee -a $log)
 exec 2> >(tee -a $log >&2)
 touch $log
@@ -87,7 +87,7 @@ if [[ ! -f "$configFile" ]] ; then
         exit 1
 fi
 
-export DISPLAY=:0
+export DISPLAY=`cat ~/dumuzid/main.bash`
 
 echo Begin `date`  .....
 
