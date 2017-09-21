@@ -90,7 +90,7 @@ fi
 for page in `cat $configFile | sort | uniq | sort -R | head -n 3`; do
 	START=$(date +%s.%N)
 	TH=10
-	if ! curl -I -fs --max-time $TH $page | head -n 1 ; then
+	if ! curl -k -I -fs --max-time $TH $page | head -n 1 ; then
 		END=$(date +%s.%N)
 		DIFF=$(echo "$END - $START" | bc)
 		sendAlert=1
