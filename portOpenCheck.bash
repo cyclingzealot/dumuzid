@@ -2,6 +2,16 @@
 
 START=$(date +%s.%N)
 
+arg1=${1:-''}
+
+if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
+    echo "Use to test if port is open.  Requires a config file at $configFile with a list of '\$host/\$port', like"
+    echo "lusk/22"
+    echo "galaxy/22"
+    echo "localhost/80"
+    exit 0
+fi
+
 
 #exit when command fails (use || true when a command can fail)
 set -o errexit
@@ -76,15 +86,13 @@ configFile="$HOME/.${__base}.conf"
 
 #Check that the config file exists
 if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with just a port number"
+    echo "I need a file at $configFile with a list of '\$host/\$port', like"
+    echo "lusk/22"
+    echo "galaxy/22"
+    echo "localhost/80"
         exit 1
-fi
-
-arg1=${1:-''}
-
-if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
-    echo "Use to test if port is open.  Requires a config file at $configFile with just a port number"
-    exit 0
+else
+    chmod 600 $configFile
 fi
 
 export DISPLAY=:0
@@ -92,19 +100,22 @@ export DISPLAY=:0
 ### BEGIN SCRIPT ###############################################################
 
 #(a.k.a set -x) to trace what gets executed
-set -o xtrace
+#set -o xtrace
 
-port=`cat $configFile`
+for coords in `cat $configFile`; do
+    error=1
+    exec 6<>/dev/tcp/$coords && error=0
+    exec 6>&- # close output connection
+    exec 6<&- # close input connection
 
-error=1
-exec 6<>/dev/tcp/127.0.0.1/$port && error=0
-exec 6>&- # close output connection
-exec 6<&- # close input connection
+    if [[ "$error" -ne 0 ]]; then
+    	echo "Nothing listening at $coords "
+        exit $error
+    else
+        echo "OK: $coords"
+    fi
 
-if [[ "$error" -ne 0 ]]; then
-	echo "Nothing listening on port $port"
-fi
-exit $error
+done
 
 
 set +x
