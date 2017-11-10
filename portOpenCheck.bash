@@ -2,12 +2,6 @@
 
 START=$(date +%s.%N)
 
-arg1=${1:-''}
-
-if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
-    echo "Script author should have provided documentation"
-    exit 0
-fi
 
 #exit when command fails (use || true when a command can fail)
 set -o errexit
@@ -47,9 +41,25 @@ formerDir=`pwd`
 # If you require named arguments, see
 # http://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 
-#Set the config file
-configFile="$HOME/.${__base}.ignoreMountPoints.conf"
+#=== BEGIN Unique instance ============================================
+#Ensure only one copy is running
+pidfile=$HOME/.${__base}.pid
+if [ -f ${pidfile} ]; then
+   #verify if the process is actually still running under this pid
+   oldpid=`cat ${pidfile}`
+   result=`ps -ef | grep ${oldpid} | grep ${__base} || true`
 
+   if [ -n "${result}" ]; then
+     echo "Script already running! Exiting"
+     exit 255
+   fi
+fi
+
+#grab pid of this process and update the pid file with it
+echo ${pid} > ${pidfile}
+
+# Create trap for lock file in case it fails
+trap "rm -f $pidfile" INT QUIT TERM ERR
 #=== END Unique instance ============================================
 
 
@@ -61,53 +71,54 @@ exec 2> >(tee -a $log >&2)
 touch $log
 chmod 600 $log
 
+#Set the config file
+configFile="$HOME/.${__base}.conf"
 
 #Check that the config file exists
 if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with a list of mountpoints to ignore"
+        echo "I need a file at $configFile with just a port number"
         exit 1
+fi
+
+arg1=${1:-''}
+
+if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
+    echo "Use to test if port is open.  Requires a config file at $configFile with just a port number"
+    exit 0
 fi
 
 export DISPLAY=:0
 
-echo; echo; echo;
-
 ### BEGIN SCRIPT ###############################################################
 
 #(a.k.a set -x) to trace what gets executed
-#set -o xtrace
+set -o xtrace
 
-hostname=`hostname`
+port=`cat $configFile`
 
-sendAlert=0
-body=''
-IFS=$'\n'; for mount in `df`; do
-    if echo $mount | grep 'Filesystem\|fichiers' ; then
-        continue
-    fi
+error=1
+exec 6<>/dev/tcp/127.0.0.1/$port && error=0
+exec 6>&- # close output connection
+exec 6<&- # close input connection
 
-    CURRENT=$(echo $mount | awk '{ print $5}' | sed 's/%//g')
-    mountPoint=$(echo $mount | awk '{ print $6}' | sed 's/%//g')
-    filesystem=$(echo $mount | awk '{ print $1}' | sed 's/%//g')
-    THRESHOLD=90
-    if [[ $(date +%u) -gt 5 ]] || [[ $(date +%_H) -lt 10 ]] || [[ $(date +%_H) -gt 18 ]] ; then
-        THRESHOLD=95
-    fi
+if [[ "$error" -ne 0 ]]; then
+	echo "Nothing listening on port $port"
+fi
+exit $error
 
-    if grep "^${mountPoint}$" $configFile ; then
-        echo "Ignoring $mountPoint"
-        continue
-    fi
 
-    if [[ "$CURRENT" -gt "$THRESHOLD" ]] ; then
-        sendAlert=1
-        body=`echo -e "${body}
-Your $mountPoint ($filesystem) partition remaining free space on $hostname is used at $CURRENT% \\n"`
-	echo $body
-    else
-        echo $mountPoint $CURRENT OK.
-    fi
-done
+set +x
 
-exit $sendAlert
+### END SCIPT ##################################################################
 
+cd $formerDir
+
+END=$(date +%s.%N)
+DIFF=$(echo "round($END - $START)" | bc)
+#echo Done.  `date` - $DIFF seconds
+
+#=== BEGIN Unique instance ============================================
+if [ -f ${pidfile} ]; then
+    rm ${pidfile}
+fi
+#=== END Unique instance ============================================

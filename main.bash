@@ -74,7 +74,7 @@ trap "rm -f $pidfile" INT QUIT TERM ERR
 
 #Capture everything to log
 mkdir -p ~/log
-log=~/log/$__base-${ts}.log
+log=~/log/dumuzid-${ts}.log
 exec >  >(tee -a $log)
 exec 2> >(tee -a $log >&2)
 touch $log
@@ -87,7 +87,7 @@ if [[ ! -f "$configFile" ]] ; then
         exit 1
 fi
 
-export DISPLAY=:0
+export DISPLAY=`cat ~/dumuzid/main.bash`
 
 echo Begin `date`  .....
 
@@ -133,10 +133,17 @@ if [ "$sendAlert" -eq "1" ] ; then
     echo  >> $scratchFile
     echo "Running on `hostname` by user `whoami`" >> $scratchFile
     cat $scratchFile
-    if ~/bin/flagger.bash dumuzid 3600; then
-        cat $scratchFile | mail -s "$subject" $recipient
+    if [[ "$recipient" != 'onscreen' ]]; then
+        if ~/bin/flagger.bash dumuzid 3600; then
+            cat $scratchFile | mail -s "$subject" $recipient
+        else
+    	    echo "Too early to send another notice"
+        fi
+    elif [[ "$recipient" == 'onscreen' ]]; then
+        notify-send "`cat $scratchFile | grep -v '===' | grep -v 'Running on' `"
     else
-	echo "Too early to send another notice"
+        echo "Unrecognized recipient"
+        exit 1
     fi
 else
     ~/bin/flagger.bash dumuzid -1
