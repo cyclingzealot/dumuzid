@@ -140,7 +140,7 @@ if [ "$sendAlert" -eq "1" ] ; then
     	    echo "Too early to send another notice"
         fi
     elif [[ "$recipient" == 'onscreen' ]]; then
-        notify-send "`cat $scratchFile | grep -v '===' | grep -v 'Running on' `"
+        notify-send -t 60000 "`cat $scratchFile | grep -v '===' | grep -v 'Running on' `"
     else
         echo "Unrecognized recipient"
         exit 1
