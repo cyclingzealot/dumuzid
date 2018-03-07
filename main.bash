@@ -126,7 +126,7 @@ for script in $__dir/*.bash ; do
     fi
 
     #Delete log files more than 1.5 days ago (36 hours)
-    find ~/log -name "$bn*" -mmin +60 -exec rm -v {}  \;
+    find ~/log -name "$bn.*.log" -mmin +60 -exec rm -v {}  \;
 
 
 done
