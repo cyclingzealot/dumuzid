@@ -87,7 +87,7 @@ if [[ ! -f $configFile ]]; then
 	body="No pages to test for $__base"
 fi
 
-for page in `cat $configFile | sort | uniq | sort -R | head -n 3`; do
+for page in `cat $configFile | sort | uniq | sort -R `; do
 	START=$(date +%s.%N)
 	TH=10
 	if ! curl -k -I -fs --max-time $TH $page | head -n 1 ; then
