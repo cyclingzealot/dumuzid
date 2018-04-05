@@ -88,14 +88,20 @@ if [[ ! -f $configFile ]]; then
 fi
 
 for page in `cat $configFile | sort | uniq | sort -R `; do
-	START=$(date +%s.%N)
 	TH=10
-	if ! curl -k -I -fs --max-time $TH $page | head -n 1 ; then
-		END=$(date +%s.%N)
-		DIFF=$(echo "$END - $START" | bc)
-		sendAlert=1
-		body="$page not loading or took $DIFF to load"
-	fi
+    loadSuccess="false"
+    attempt=1
+    while [[  "$loadSuccess" != "true"  && ( $attempt < 5) ]]; do
+	    START=$(date +%s.%N)
+	    if curl -k -I -fs --max-time $TH $page > /dev/null; then
+            loadSuccess="true"
+	    fi
+        let attempt++
+	    END=$(date +%s.%N)
+    done
+	DIFF=$(echo "$END - $START" | bc)
+	sendAlert=1
+	body="$page not loading or took $DIFF to load"
 done
 
 echo $body
