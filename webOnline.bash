@@ -89,8 +89,21 @@ fi
 
 for page in `cat $configFile | sort | uniq | sort -R `; do
 	START=$(date +%s.%N)
-	TH=10
-	if ! curl -k -I -fs --max-time $TH $page | head -n 1 ; then
+	TH=20
+    connect=false
+    attempts=0
+    set -x
+    while  [ $attempts -lt 3 ] &&  ! $connect  ; do
+		if ! curl -k -I -fs --max-time $TH $page > /dev/null ; then
+	        let "attempts++"
+	    else
+	        connect=true
+	    fi
+        sleep 1
+    done
+
+
+    if ! $connect ; then
 		END=$(date +%s.%N)
 		DIFF=$(echo "$END - $START" | bc)
 		sendAlert=1
