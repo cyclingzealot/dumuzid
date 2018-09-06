@@ -95,7 +95,7 @@ for page in `cat $configFile | sort | uniq | sort -R `; do
     set -x
     while  [ $attempts -lt 3 ] &&  ! $connect  ; do
 		if ! curl -k -I -fs --max-time $TH $page > /dev/null ; then
-	        let "attempts++"
+	        let "attempts++" || true
 	    else
 	        connect=true
 	    fi
