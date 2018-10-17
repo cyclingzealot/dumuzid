@@ -125,7 +125,7 @@ set +x
 cd $formerDir
 
 END=$(date +%s.%N)
-DIFF=$(echo "round($END - $START)" | bc)
+DIFF=$(echo "($END - $START)" | bc)
 #echo Done.  `date` - $DIFF seconds
 
 #=== BEGIN Unique instance ============================================

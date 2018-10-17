@@ -4,10 +4,16 @@ START=$(date +%s.%N)
 
 arg1=${1:-''}
 
+TH=20
+
 if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
-    echo "Script author should have provided documentation"
+    echo "Usage: $0 [\$thresholdTimeoutSeconds]"
+    echo "The first argument is the timeout in seconds.  Defaults to ${TH} seconds"
     exit 0
 fi
+
+TH=${1:-20}
+
 
 #exit when command fails (use || true when a command can fail)
 set -o errexit
@@ -88,20 +94,26 @@ if [[ ! -f $configFile ]]; then
 fi
 
 for page in `cat $configFile | sort | uniq | sort -R `; do
-	TH=10
-    loadSuccess="false"
-    attempt=1
-    while [[  "$loadSuccess" != "true"  && ( $attempt < 5) ]]; do
-	    START=$(date +%s.%N)
-	    if curl -k -I -fs --max-time $TH $page > /dev/null; then
-            loadSuccess="true"
+	START=$(date +%s.%N)
+    connect=false
+    attempts=0
+    set -x
+    while  [ $attempts -lt 3 ] &&  ! $connect  ; do
+		if ! curl -k -I -fs --max-time $TH $page > /dev/null ; then
+	        let "attempts++" || true
+	    else
+	        connect=true
 	    fi
-        let attempt++
-	    END=$(date +%s.%N)
+        sleep 1
     done
-	DIFF=$(echo "$END - $START" | bc)
-	sendAlert=1
-	body="$page not loading or took $DIFF to load"
+
+
+    if ! $connect ; then
+		END=$(date +%s.%N)
+		DIFF=$(echo "$END - $START" | bc)
+		sendAlert=1
+		body="$page not loading or took $DIFF to load"
+	fi
 done
 
 echo $body
