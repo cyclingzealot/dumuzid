@@ -104,9 +104,15 @@ export DISPLAY=:0
 
 for coords in `cat $configFile`; do
     error=1
-    exec 6<>/dev/tcp/$coords && error=0
-    exec 6>&- # close output connection
-    exec 6<&- # close input connection
+    attempts=3
+
+    while [ "$error" -eq 1 -a "$attempts" -gt 0 ]; do
+        exec 6<>/dev/tcp/$coords && error=0
+        exec 6>&- # close output connection
+        exec 6<&- # close input connection
+        let 'attempts--'
+        sleep 1
+    done
 
     if [[ "$error" -ne 0 ]]; then
     	echo "Nothing listening at $coords "
