@@ -110,7 +110,7 @@ for coords in `cat $configFile`; do
         exec 6<>/dev/tcp/$coords && error=0
         exec 6>&- # close output connection
         exec 6<&- # close input connection
-        let 'attempts--'
+        let 'attempts--' || true
         sleep 1
     done
 
