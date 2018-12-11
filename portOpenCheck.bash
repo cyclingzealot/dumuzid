@@ -104,7 +104,7 @@ export DISPLAY=:0
 
 for coords in `cat $configFile`; do
     error=1
-    attempts=3
+    attempts=6
 
     while [ "$error" -eq 1 -a "$attempts" -gt 0 ]; do
         exec 6<>/dev/tcp/$coords && error=0
