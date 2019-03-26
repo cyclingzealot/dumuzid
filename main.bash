@@ -115,6 +115,7 @@ for script in $__dir/*.bash ; do
     if [[ "$bn" == "$__base" ]] || grep $bn $__dir/dontRun.txt; then
 	continue
     fi
+    echo `date` "Executing $script"
     $script > $scratchFile.one || localAlert=1
 
     if [ "$localAlert" -eq "1" ] ; then
