@@ -4,10 +4,16 @@ START=$(date +%s.%N)
 
 arg1=${1:-''}
 
+TH=20
+
 if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
-    echo "Script author should have provided documentation"
+    echo "Usage: $0 [\$thresholdTimeoutSeconds]"
+    echo "The first argument is the timeout in seconds.  Defaults to ${TH} seconds"
     exit 0
 fi
+
+TH=${1:-20}
+
 
 #exit when command fails (use || true when a command can fail)
 set -o errexit
@@ -89,8 +95,20 @@ fi
 
 for page in `cat $configFile | sort | uniq | sort -R `; do
 	START=$(date +%s.%N)
-	TH=10
-	if ! curl -k -I -fs --max-time $TH $page | head -n 1 ; then
+    connect=false
+    attempts=0
+    set -x
+    while  [ $attempts -lt 3 ] &&  ! $connect  ; do
+		if ! curl -k -I -fs --max-time $TH $page > /dev/null ; then
+	        let "attempts++" || true
+	    else
+	        connect=true
+	    fi
+        sleep 1
+    done
+
+
+    if ! $connect ; then
 		END=$(date +%s.%N)
 		DIFF=$(echo "$END - $START" | bc)
 		sendAlert=1
