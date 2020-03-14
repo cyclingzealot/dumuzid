@@ -83,7 +83,7 @@ echo; echo; echo;
 ### BEGIN SCRIPT ###############################################################
 
 #(a.k.a set -x) to trace what gets executed
-set -o xtrace
+#set -o xtrace
 
 sendAlert=0
 body=''
@@ -99,6 +99,7 @@ for line in `cat $configFile | sort | uniq | sort -R `; do
     if echo $line | grep ';'; then
         set -x
         skipUntil=`echo $line | cut -d ';' -f 2`
+        echo "Skip for $page set to $skipUntil"
         set +x
         skipUntil=`date -d "$skipUntil" +'%s'`
 	fi
