@@ -97,11 +97,16 @@ for line in `cat $configFile | sort | uniq | sort -R `; do
     page=`echo $line | cut -d ';' -f 1`
 
     if echo $line | grep ';'; then
-        set -x
         skipUntil=`echo $line | cut -d ';' -f 2`
-        echo "Skip for $page set to $skipUntil"
-        set +x
+        echo "skipUntil for $page set to $skipUntil"
         skipUntil=`date -d "$skipUntil" +'%s'`
+
+        if [ `date '+%s'` -lt "$skipUntil" ]; then
+            echo "SKIPPING $page"
+            continue
+        else
+            echo "Continuing with $page"
+        fi
 	fi
 
 	START=$(date +%s.%N)
