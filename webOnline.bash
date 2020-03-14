@@ -93,7 +93,16 @@ if [[ ! -f $configFile ]]; then
 	body="No pages to test for $__base"
 fi
 
-for page in `cat $configFile | sort | uniq | sort -R `; do
+for line in `cat $configFile | sort | uniq | sort -R `; do
+    page=`echo $line | cut -d ';' -f 1`
+
+    if echo $line | grep ';'; then
+        set -x
+        skipUntil=`echo $line | cut -d ';' -f 2`
+        set +x
+        skipUntil=`date -d "$skipUntil" +'%s'`
+	fi
+
 	START=$(date +%s.%N)
     connect=false
     attempts=0
