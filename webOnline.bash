@@ -98,8 +98,15 @@ for page in `cat $configFile | sort | uniq | sort -R `; do
     connect=false
     attempts=0
     set -x
-    while  [ $attempts -lt 3 ] &&  ! $connect  ; do
-		if ! curl -k -I -fs --max-time $TH $page > /dev/null ; then
+    while  [ $attempts -le 3 ] &&  ! $connect  ; do
+
+        #Try v4 as some sites do block v4
+        v4=''
+        if [ $(expr $attempts % 2) != "0" ]; then
+            v4='-4'
+        fi
+
+		if ! curl $v4 -k -I -fs --max-time $TH $page > /dev/null ; then
 	        let "attempts++" || true
 	    else
 	        connect=true
