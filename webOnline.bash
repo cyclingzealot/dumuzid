@@ -83,7 +83,7 @@ echo; echo; echo;
 ### BEGIN SCRIPT ###############################################################
 
 #(a.k.a set -x) to trace what gets executed
-set -o xtrace
+#set -o xtrace
 
 sendAlert=0
 body=''
@@ -93,7 +93,22 @@ if [[ ! -f $configFile ]]; then
 	body="No pages to test for $__base"
 fi
 
-for page in `cat $configFile | sort | uniq | sort -R `; do
+for line in `cat $configFile | sort | uniq | sort -R `; do
+    page=`echo $line | cut -d ';' -f 1`
+
+    if echo $line | grep ';'; then
+        skipUntil=`echo $line | cut -d ';' -f 2`
+        echo "skipUntil for $page set to $skipUntil"
+        skipUntil=`date -d "$skipUntil" +'%s'`
+
+        if [ `date '+%s'` -lt "$skipUntil" ]; then
+            echo "SKIPPING $page"
+            continue
+        else
+            echo "Continuing with $page"
+        fi
+	fi
+
 	START=$(date +%s.%N)
     connect=false
     attempts=0
