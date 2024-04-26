@@ -4,16 +4,10 @@ START=$(date +%s.%N)
 
 arg1=${1:-''}
 
-TH=20
-
 if [[ $arg1 == '--help' || $arg1 == '-h' ]]; then
-    echo "Usage: $0 [\$thresholdTimeoutSeconds]"
-    echo "The first argument is the timeout in seconds.  Defaults to ${TH} seconds"
+    echo "Script author should have provided documentation"
     exit 0
 fi
-
-TH=${1:-20}
-
 
 #exit when command fails (use || true when a command can fail)
 set -o errexit
@@ -54,11 +48,27 @@ formerDir=`pwd`
 # http://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 
 #Set the config file
-configFile="$HOME/.${__base}.conf"
+configFile="$HOME/.binJlam/$0.conf"
 
+#=== BEGIN Unique instance ============================================
+#Ensure only one copy is running
+pidfile=$HOME/.${__base}.pid
+if [ -f ${pidfile} ]; then
+   #verify if the process is actually still running under this pid
+   oldpid=`cat ${pidfile}`
+   result=`ps -ef | grep ${oldpid} | grep ${__base} || true`
 
+   if [ -n "${result}" ]; then
+     echo "Script already running! Exiting"
+     exit 255
+   fi
+fi
 
+#grab pid of this process and update the pid file with it
+echo ${pid} > ${pidfile}
 
+# Create trap for lock file in case it fails
+trap "rm -f $pidfile" INT QUIT TERM ERR
 #=== END Unique instance ============================================
 
 
@@ -73,10 +83,15 @@ chmod 600 $log
 
 #Check that the config file exists
 if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with urls to test (as many as you like)"
+        echo "I need a file at $configFile with, for example, ..."
+        echo "\$dirFullPath1;0755;d"
+        echo "\$fileFullPath1;0600;f"
+        exit 1
 fi
 
 export DISPLAY=:0
+
+echo Begin `date`  .....
 
 echo; echo; echo;
 
@@ -85,60 +100,35 @@ echo; echo; echo;
 #(a.k.a set -x) to trace what gets executed
 #set -o xtrace
 
-sendAlert=0
-body=''
+error=0
+while read row ; do
+  path=$(echo $row |       cut -d';' -f1)
+  permission=$(echo $row | cut -d';' -f2)
+  kind=$(echo $row |       cut -d';' -f3)
 
-if [[ ! -f $configFile ]]; then
-	sendAlert=1
-	body="No pages to test for $__base"
+  find $path -perm $permission -type $kind | grep . || error=1
+
+  if [ "$error" -eq 1 ]; then
+    echo "File / directory $path missing, not right permissions (expected $permission) or type (expected $kind)"
+    exit 1
+  fi
+done < $configFile
+
+
+
+set +x
+
+### END SCIPT ##################################################################
+
+cd $formerDir
+
+END=$(date +%s.%N)
+DIFF=$(echo "($END - $START)" | bc | cut -f 1 -d. )
+echo; echo; echo;
+echo Done.  `date` - $DIFF seconds
+
+#=== BEGIN Unique instance ============================================
+if [ -f ${pidfile} ]; then
+    rm ${pidfile}
 fi
-
-for line in `cat $configFile | sort | uniq | sort -R `; do
-    page=`echo $line | cut -d ';' -f 1`
-
-    if echo $line | grep ';'; then
-        skipUntil=`echo $line | cut -d ';' -f 2`
-        echo "skipUntil for $page set to $skipUntil"
-        skipUntil=`date -d "$skipUntil" +'%s'`
-
-        if [ `date '+%s'` -lt "$skipUntil" ]; then
-            echo "SKIPPING $page"
-            continue
-        else
-            echo "Continuing with $page"
-        fi
-	fi
-
-	START=$(date +%s.%N)
-    connect=false
-    attempts=0
-    set -x
-    while  [ $attempts -le 3 ] &&  ! $connect  ; do
-
-        #Try v4 as some sites do block v4
-        v4=''
-        if [ $(expr $attempts % 2) != "0" ]; then
-            v4='-4'
-        fi
-
-		if ! curl $v4 -k -I -fs --max-time $TH $page > /dev/null ; then
-	        let "attempts++" || true
-	    else
-	        connect=true
-	    fi
-        sleep 1
-    done
-
-
-    if ! $connect ; then
-		END=$(date +%s.%N)
-		DIFF=$(echo "$END - $START" | bc)
-		sendAlert=1
-		body="$page not loading or took $DIFF to load"
-	fi
-done
-
-echo $body
-
-exit $sendAlert
-
+#=== END Unique instance ============================================
