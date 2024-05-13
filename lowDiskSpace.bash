@@ -48,7 +48,7 @@ formerDir=`pwd`
 # http://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 
 #Set the config file
-configFile="$HOME/.${__base}.ignoreMountPoints.conf"
+configFile="$HOME/.${__file}.ignoreMountPoints.conf"
 
 #=== END Unique instance ============================================
 
