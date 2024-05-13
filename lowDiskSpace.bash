@@ -48,7 +48,8 @@ formerDir=`pwd`
 # http://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 
 #Set the config file
-configFile="$HOME/.${__file}.ignoreMountPoints.conf"
+ignoreFile="$HOME/.${__base}.ignoreMountPoints.conf"
+thresholdFile="$HOME/.${__base}.thresholdMountPoints.conf"
 
 #=== END Unique instance ============================================
 
@@ -63,9 +64,12 @@ chmod 600 $log
 
 
 #Check that the config file exists
-if [[ ! -f "$configFile" ]] ; then
-        echo "I need a file at $configFile with a list of mountpoints to ignore"
-        exit 1
+if [[ ! -f "$ignoreFile" ]] ; then
+        echo "You can have a file at $ignoreFile with a list of mountpoints to ignore"
+fi
+
+if [[ ! -f "$thresholdFile" ]] ; then
+        echo "You can have a file at $thresholdFile with a list of thresholds for each mountpoint.  One per line, with threshold seperated by |"
 fi
 
 export DISPLAY=:0
@@ -82,6 +86,7 @@ hostname=`hostname`
 sendAlert=0
 body=''
 IFS=$'\n'; for mount in `df`; do
+    headline.bash $mount
     if echo $mount | grep 'Filesystem\|fichiers' ; then
         continue
     fi
@@ -89,25 +94,32 @@ IFS=$'\n'; for mount in `df`; do
     CURRENT=$(echo $mount | awk '{ print $5}' | sed 's/%//g')
     mountPoint=$(echo $mount | awk '{ print $6}' | sed 's/%//g')
     filesystem=$(echo $mount | awk '{ print $1}' | sed 's/%//g')
-    THRESHOLD=90
-    if [[ $(date +%u) -gt 5 ]] || [[ $(date +%_H) -lt 10 ]] || [[ $(date +%_H) -gt 18 ]] ; then
-        THRESHOLD=95
-    fi
+    threshold=90
 
-    if grep "^${mountPoint}$" $configFile ; then
+    if [[ -f "$ignoreFile" ]] && grep "^${mountPoint}$" $ignoreFile ; then
         echo "Ignoring $mountPoint"
         continue
     fi
 
-    if [[ "$CURRENT" -gt "$THRESHOLD" ]] ; then
+    if [[ -f "$thresholdFile" ]] && grep "^${mountPoint}|" $thresholdFile ; then
+      threshold=`grep "^${mountPoint}|" $thresholdFile | cut -d'|' -f 2`
+      echo "Using threshold $threshold for $mountPoint"
+    fi
+
+    if [[ $(date +%u) -gt 5 ]] || [[ $(date +%_H) -lt 10 ]] || [[ $(date +%_H) -gt 18 ]] ; then
+      let threshold+=5
+    fi
+
+    if [[ "$CURRENT" -gt "$threshold" ]] ; then
         sendAlert=1
         body=`echo -e "${body}
 Your $mountPoint ($filesystem) partition remaining free space on $hostname is used at $CURRENT% \\n"`
-	echo $body
     else
         echo $mountPoint $CURRENT OK.
     fi
 done
+
+echo $body
 
 exit $sendAlert
 
