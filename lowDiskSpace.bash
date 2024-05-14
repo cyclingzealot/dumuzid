@@ -86,7 +86,7 @@ hostname=`hostname`
 sendAlert=0
 body=''
 IFS=$'\n'; for mount in `df`; do
-    headline.bash $mount
+    echo === $mount =========================================================================================
     if echo $mount | grep 'Filesystem\|fichiers' ; then
         continue
     fi
